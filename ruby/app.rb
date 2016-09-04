@@ -299,9 +299,8 @@ SQL
 
   post '/diary/entry' do
     authenticated!
-    query = 'INSERT INTO entries (user_id, private, body) VALUES (?,?,?)'
-    body = (params['title'] || "タイトルなし") + "\n" + params['content']
-    db.xquery(query, current_user[:id], (params['private'] ? '1' : '0'), body)
+    query = 'INSERT INTO entries (user_id, private, title, content) VALUES (?,?,?,?)'
+    db.xquery(query, current_user[:id], (params['private'] ? '1' : '0'), (params['title'] || "タイトルなし"), params['content'])
     redirect "/diary/entries/#{current_user[:account_name]}"
   end
 
