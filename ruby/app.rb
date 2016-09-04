@@ -3,7 +3,6 @@ require 'mysql2'
 require 'mysql2-cs-bind'
 require 'tilt/erubis'
 require 'erubis'
-require 'rack-lineprof'
 
 module Isucon5
   class AuthenticationError < StandardError; end
@@ -18,8 +17,6 @@ module Isucon5
 end
 
 class Isucon5::WebApp < Sinatra::Base
-  use Rack::Lineprof, profile: 'app.rb'  # TODO あとで消す
-
   use Rack::Session::Cookie
   set :erb, escape_html: true
   set :public_folder, File.expand_path('../../static', __FILE__)
@@ -192,7 +189,6 @@ SQL
     end
 
     comments_of_friends = []
-    # TODO comments JOIN users JOIN relation JOIN entries
     db.query('SELECT * FROM comments ORDER BY created_at DESC LIMIT 1000').each do |comment|
       next unless is_friend?(comment[:user_id])
       entry = db.xquery('SELECT * FROM entries WHERE id = ?', comment[:entry_id]).first
@@ -200,7 +196,7 @@ SQL
       entry[:is_private] = (entry[:private] == 1)
       next if entry[:is_private] && !permitted?(entry[:user_id])
       comments_of_friends << comment
-      break if comments_of_friends.size >= 10  # TODO 10件だけとればよい
+      break if comments_of_friends.size >= 10
     end
 
     friends_query = 'SELECT * FROM relations WHERE one = ? OR another = ? ORDER BY created_at DESC'
