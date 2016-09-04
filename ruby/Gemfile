@@ -6,3 +6,5 @@ gem "mysql2", '>= 0.4.4'
 gem "mysql2-cs-bind"
 gem "erubis"
 gem "unicorn"
+
+gem 'rack-lineprof'
