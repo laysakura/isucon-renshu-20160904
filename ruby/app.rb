@@ -214,8 +214,7 @@ SQL
     entries_of_friends = db.xquery("SELECT * FROM entries WHERE user_id IN (#{friends.map { |f| f[0]}.join(',')}) ORDER BY created_at DESC")
 
     comments_of_friends = []
-    db.query('SELECT id, entry_id, user_id, SUBSTRING(comment, 1, 31) as comment, created_at FROM comments ORDER BY created_at DESC LIMIT 1000').each do |comment|
-      next unless is_friend?(comment[:user_id])
+    db.query("SELECT id, entry_id, user_id, SUBSTRING(comment, 1, 31) as comment, created_at FROM comments WHERE user_id IN (#{friends.map { |f| f[0]}.join(',')}) ORDER BY created_at DESC LIMIT 1000").each do |comment|
       entry = db.xquery('SELECT * FROM entries WHERE id = ?', comment[:entry_id]).first
       next if entry.nil?
       entry[:is_private] = (entry[:private] == 1)
