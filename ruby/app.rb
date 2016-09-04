@@ -29,6 +29,7 @@ class Isucon5::WebApp < Sinatra::Base
 
   @@users_by_id = eval File.read('users_by_id.tsv', mode: "r:UTF-8:-")
   @@users_by_account_name = eval File.read('users_by_account_name.tsv', mode: "r:UTF-8:-")
+  @@users_by_email = eval File.read('users_by_email.tsv', mode: "r:UTF-8:-")
 
   helpers do
     def config
@@ -59,17 +60,20 @@ class Isucon5::WebApp < Sinatra::Base
     end
 
     def authenticate(email, password)
+      user = @@users_by_email[email]
+      unless user
+        raise Isucon5::AuthenticationError
+      end
+
       query = <<SQL
-SELECT u.id AS id, u.account_name AS account_name, u.nick_name AS nick_name, u.email AS email
-FROM users u
-JOIN salts s ON u.id = s.user_id
-WHERE u.email = ? AND u.passhash = SHA2(CONCAT(?, s.salt), 512)
+SELECT user_id FROM salts WHERE ? = SHA2(CONCAT(?, salt), 512)
 SQL
-      result = db.xquery(query, email, password).first
+      result = db.xquery(query, user[:passhash], password).first
+
       unless result
         raise Isucon5::AuthenticationError
       end
-      session[:user_id] = result[:id]
+      session[:user_id] = user[:id]
       result
     end
 
