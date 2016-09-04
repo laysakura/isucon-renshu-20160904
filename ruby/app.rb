@@ -192,6 +192,7 @@ SQL
     db.query('SELECT * FROM comments ORDER BY created_at DESC LIMIT 1000').each do |comment|
       next unless is_friend?(comment[:user_id])
       entry = db.xquery('SELECT * FROM entries WHERE id = ?', comment[:entry_id]).first
+      next if entry.nil?
       entry[:is_private] = (entry[:private] == 1)
       next if entry[:is_private] && !permitted?(entry[:user_id])
       comments_of_friends << comment
