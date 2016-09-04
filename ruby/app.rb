@@ -180,6 +180,21 @@ SQL
   get '/' do
     authenticated!
 
+    friends_map = {}
+    query1 = 'SELECT * FROM relations WHERE one = ? ORDER BY created_at DESC'
+    relations1 = db.xquery(query1, current_user[:id]).to_a
+
+    query2 = 'SELECT * FROM relations WHERE another = ? ORDER BY created_at DESC'
+    relations2 = db.xquery(query2, current_user[:id]).to_a
+
+    relations = (relations1 + relations2).sort { |a, b| b[:created_at] <=> a[:created_at] }
+
+    relations.each do |rel|
+      key = (rel[:one] == current_user[:id] ? :another : :one)
+      friends_map[rel[key]] ||= rel[:created_at]
+    end
+    friends = friends_map.map{|user_id, created_at| [user_id, created_at]}
+
     profile = db.xquery('SELECT * FROM profiles WHERE user_id = ?', current_user[:id]).first
 
     entries_query = 'SELECT * FROM entries WHERE user_id = ? ORDER BY created_at LIMIT 5'
@@ -197,11 +212,12 @@ SQL
     comments_for_me = db.xquery(comments_for_me_query, current_user[:id])
 
     entries_of_friends = []
-    db.query('SELECT * FROM entries ORDER BY created_at DESC LIMIT 1000').each do |entry|
-      next unless is_friend?(entry[:user_id])
-      entries_of_friends << entry
-      break if entries_of_friends.size >= 10
-    end
+    # db.query('SELECT * FROM entries ORDER BY created_at DESC LIMIT 1000').each do |entry|
+    #   next unless is_friend?(entry[:user_id])
+    #   entries_of_friends << entry
+    #   break if entries_of_friends.size >= 10
+    # end
+    entries_of_friends = db.xquery('SELECT * FROM entries WHERE user_id IN (?) ORDER BY created_at DESC', friends)
 
     comments_of_friends = []
     db.query('SELECT * FROM comments ORDER BY created_at DESC LIMIT 1000').each do |comment|
@@ -213,22 +229,6 @@ SQL
       comments_of_friends << comment
       break if comments_of_friends.size >= 10
     end
-
-    friends_map = {}
-
-    query1 = 'SELECT * FROM relations WHERE one = ? ORDER BY created_at DESC'
-    relations1 = db.xquery(query1, current_user[:id]).to_a
-
-    query2 = 'SELECT * FROM relations WHERE another = ? ORDER BY created_at DESC'
-    relations2 = db.xquery(query2, current_user[:id]).to_a
-
-    relations = (relations1 + relations2).sort { |a, b| b[:created_at] <=> a[:created_at] }
-
-    relations.each do |rel|
-      key = (rel[:one] == current_user[:id] ? :another : :one)
-      friends_map[rel[key]] ||= rel[:created_at]
-    end
-    friends = friends_map.map{|user_id, created_at| [user_id, created_at]}
 
     query = <<SQL
 SELECT user_id, owner_id, DATE(created_at) AS date, MAX(created_at) AS updated
