@@ -3,6 +3,7 @@ require 'mysql2'
 require 'mysql2-cs-bind'
 require 'tilt/erubis'
 require 'erubis'
+#require 'rack-lineprof'
 
 module Isucon5
   class AuthenticationError < StandardError; end
@@ -17,12 +18,17 @@ module Isucon5
 end
 
 class Isucon5::WebApp < Sinatra::Base
+  #use Rack::Lineprof, profile: 'app.rb'  # TODO あとで消す
+
   use Rack::Session::Cookie
   set :erb, escape_html: true
   set :public_folder, File.expand_path('../../static', __FILE__)
   #set :sessions, true
   set :session_secret, ENV['ISUCON5_SESSION_SECRET'] || 'beermoris'
   set :protection, true
+
+  @@users_by_id = eval File.read 'users_by_id.tsv'
+  @@users_by_account_name = eval File.read 'users_by_account_name.tsv'
 
   helpers do
     def config
@@ -72,7 +78,7 @@ SQL
       unless session[:user_id]
         return nil
       end
-      @user = db.xquery('SELECT id, account_name, nick_name, email FROM users WHERE id=?', session[:user_id]).first
+      @user = @@users_by_id[session[:user_id]]
       unless @user
         session[:user_id] = nil
         session.clear
@@ -88,13 +94,13 @@ SQL
     end
 
     def get_user(user_id)
-      user = db.xquery('SELECT * FROM users WHERE id = ?', user_id).first
+      user = @@users_by_id[user_id]
       raise Isucon5::ContentNotFound unless user
       user
     end
 
     def user_from_account(account_name)
-      user = db.xquery('SELECT * FROM users WHERE account_name = ?', account_name).first
+      user = @@users_by_account_name[account_name]
       raise Isucon5::ContentNotFound unless user
       user
     end
