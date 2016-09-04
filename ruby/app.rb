@@ -107,8 +107,14 @@ SQL
 
     def is_friend?(another_id)
       user_id = session[:user_id]
-      query = 'SELECT COUNT(1) AS cnt FROM relations WHERE (one = ? AND another = ?) OR (one = ? AND another = ?)'
-      cnt = db.xquery(query, user_id, another_id, another_id, user_id).first[:cnt]
+      user_id_small, user_id_large =
+        if user_id < another_id
+          [user_id, another_id]
+        else
+          [another_id, user_id]
+        end
+      query = 'SELECT COUNT(1) AS cnt FROM relations WHERE one = ? AND another = ?'
+      cnt = db.xquery(query, user_id_small, user_id_large).first[:cnt]
       cnt.to_i > 0 ? true : false
     end
 
@@ -204,9 +210,17 @@ SQL
       break if comments_of_friends.size >= 10
     end
 
-    friends_query = 'SELECT * FROM relations WHERE one = ? OR another = ? ORDER BY created_at DESC'
     friends_map = {}
-    db.xquery(friends_query, current_user[:id], current_user[:id]).each do |rel|
+
+    query1 = 'SELECT * FROM relations WHERE one = ? ORDER BY created_at DESC'
+    relations1 = db.xquery(query1, current_user[:id]).to_a
+
+    query2 = 'SELECT * FROM relations WHERE another = ? ORDER BY created_at DESC'
+    relations2 = db.xquery(query2, current_user[:id]).to_a
+
+    relations = (relations1 + relations2).sort { |a, b| b[:created_at] <=> a[:created_at] }
+
+    relations.each do |rel|
       key = (rel[:one] == current_user[:id] ? :another : :one)
       friends_map[rel[key]] ||= rel[:created_at]
     end
@@ -341,9 +355,17 @@ SQL
 
   get '/friends' do
     authenticated!
-    query = 'SELECT * FROM relations WHERE one = ? OR another = ? ORDER BY created_at DESC'
     friends = {}
-    db.xquery(query, current_user[:id], current_user[:id]).each do |rel|
+
+    query1 = 'SELECT * FROM relations WHERE one = ? ORDER BY created_at DESC'
+    relations1 = db.xquery(query1, current_user[:id]).to_a
+
+    query2 = 'SELECT * FROM relations WHERE another = ? ORDER BY created_at DESC'
+    relations2 = db.xquery(query2, current_user[:id]).to_a
+
+    relations = (relations1 + relations2).sort { |a, b| b[:created_at] <=> a[:created_at] }
+
+    relations.each do |rel|
       key = (rel[:one] == current_user[:id] ? :another : :one)
       friends[rel[key]] ||= rel[:created_at]
     end
@@ -358,7 +380,14 @@ SQL
       unless user
         raise Isucon5::ContentNotFound
       end
-      db.xquery('INSERT INTO relations (one, another) VALUES (?,?), (?,?)', current_user[:id], user[:id], user[:id], current_user[:id])
+
+      user_id_small, user_id_large =
+        if current_user[:id] < user[:id]
+          [current_user[:id], user[:id]]
+        else
+          [user[:id], current_user[:id]]
+        end
+      db.xquery('INSERT INTO relations (one, another) VALUES (?,?)', user_id_small, user_id_large)
       redirect '/friends'
     end
   end
