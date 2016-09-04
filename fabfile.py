@@ -12,7 +12,8 @@ env.hosts = ["13.78.93.115"]
 def pull():
     with cd("webapp"):
         run("git pull origin master")
-        run("bundle install")
+        with cd("ruby"):
+            run("bundle install")
 
 @task
 def status():
