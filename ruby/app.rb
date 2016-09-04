@@ -27,8 +27,8 @@ class Isucon5::WebApp < Sinatra::Base
   set :session_secret, ENV['ISUCON5_SESSION_SECRET'] || 'beermoris'
   set :protection, true
 
-  @@users_by_id = eval File.read 'users_by_id.tsv'
-  @@users_by_account_name = eval File.read 'users_by_account_name.tsv'
+  @@users_by_id = eval File.read('users_by_id.tsv', mode: "r:UTF-8:-")
+  @@users_by_account_name = eval File.read('users_by_account_name.tsv', mode: "r:UTF-8:-")
 
   helpers do
     def config
