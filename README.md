@@ -1,3 +1,34 @@
+# 反省点
+
+- [ ] Top-k 系のクエリはRedisが速い。
+- [ ] 始まった段階で各種ログを取って集計したい。
+    - クエリログ
+        - 全クエリ出してN+1っぽいのを検出
+        - `log_queries_not_using_indexes` でインデックス効いてないクエリをチェック
+        - `pt-query-digest` で集計して遅いクエリをランキングで見る
+    - Nginxのアクセスログ
+        - kataribeで集計し、ページ単位での遅さランキングを出す
+- [ ] 設定ファイルのプリセットを用意。
+    - MySQL
+       - `innodb_buffer_pool_size`
+    - Nginx
+       - `gzip`
+       - `unix domain socket`
+    - Redis
+       - Persistentの長さ設定(オンメモリになるようにする)
+
+## Next Action
+
+### 澤田
+
+- my.cnf, nginx.confの準備
+- Redisの準備(設定ファイル込み)
+- 諸々インストーラを作る
+
+### 中谷
+
+- Ruby (sinatra, rails) からRedis使えるようにしておく
+
 
 # localhostで走らせる
 
