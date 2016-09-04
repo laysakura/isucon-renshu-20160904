@@ -1,3 +1,4 @@
+
 # localhostで走らせる
 
 ## DBの設定
@@ -17,3 +18,47 @@ mysql -uroot isucon5q < isucon5q.dev.sql```
 
 - user: moris@tagomor.is
 - pass: moris11
+
+# deploy
+
+
+## pull
+
+ソースファイルの pull および bundle install
+
+```bash
+fab pull
+```
+
+## status
+
+アプリケーションサーバのステータス確認
+
+```bash
+fab status
+```
+
+## restart_ruby
+
+アプリケーションサーバのリスタート
+
+```
+fab restart_ruby
+```
+
+## restart_nginx
+
+nginx のリスタート
+
+```
+fab restart_nginx
+```
+
+## deploy
+
+pull, restart_ruby, restart_nginx の実行
+
+```
+fab deploy
+```
+
