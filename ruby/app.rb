@@ -204,12 +204,13 @@ SQL
     end
 
     comments_of_friends = []
-    db.query('SELECT * FROM comments ORDER BY created_at DESC LIMIT 1000').each do |comment|
+    db.query('SELECT id, entry_id, user_id, SUBSTRING(comment, 1, 31) as comment, created_at FROM comments ORDER BY created_at DESC LIMIT 1000').each do |comment|
       next unless is_friend?(comment[:user_id])
       entry = db.xquery('SELECT * FROM entries WHERE id = ?', comment[:entry_id]).first
       next if entry.nil?
       entry[:is_private] = (entry[:private] == 1)
       next if entry[:is_private] && !permitted?(entry[:user_id])
+      comment[:comment] = comment[:comment].size > 30 ? comment[:comment][0...27] + '...' : comment[:comment]
       comments_of_friends << comment
       break if comments_of_friends.size >= 10
     end
